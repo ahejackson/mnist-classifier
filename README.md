@@ -1,2 +1,2 @@
 # mnist-classifier
-Neural network for classifying MNIST handwritten digits
+Neural network for classifying MNIST handwritten digits following the architecture of the solution described in the Neural Networks and Deep Learning book by Michael Nielson but implemented independently.
