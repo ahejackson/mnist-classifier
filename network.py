@@ -44,8 +44,10 @@ class Network:
         """Provide input to the network"""
         self.activations[0] = inputs
 
-    def forwardprop(self):
+    def forwardprop(self, X):
         """vectorized implementation of forward propagation"""
+        self.activations[0] = X
+        
         # for each layer
         for i in range(self.num_layers - 1):
            # multiply the weights by the input
@@ -63,8 +65,7 @@ class Network:
     def cost(self, X, Y):
         """returns the cost function for each matched pair of training inputs X and outputs Y"""
         # the number of training examples will be Y.shape[0] (or X.shape[0] - they should be equal)
-        self.input(X)
-        self.forwardprop()
+        self.forwardprop(X)
         return np.sum((Y - self.output()) ** 2) / (2 * Y.shape[0])
 
     def backprop(self, Y, alpha):
