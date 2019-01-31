@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Network:
-    # %timeit test_network_xor()
-    # 162 ms ± 3.78 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
     # number of layers
     num_layers = 1
 
@@ -11,7 +9,7 @@ class Network:
         """Create a network from an array of layer sizes"""
         self.num_layers = len(layers)
         self.sizes = np.array(layers, copy=True)
-
+        
         # the weight matrices
         self.weights = []
         self.biases = []
