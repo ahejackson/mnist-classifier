@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Network:
+    # %timeit time_network()
+    # 151 ms ± 291 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
     # number of layers
     num_layers = 1
 
@@ -10,7 +13,6 @@ class Network:
 
     # the weight matrices
     weights = []
-    biases = []
 
     # list of vectors holding the activations
     activations = []
@@ -26,10 +28,8 @@ class Network:
             # We initialise the weights with 0
             # a list of the weights of the layers
             # size num-layers - 1 as each weights matrix govers the transition between layers
-            # each weight matrix has dimension len(layer i+1) * (len(layer i))
-            # each bias is a len(layer i + 1) x 1 column vector 
-            self.weights.append(np.zeros([layers[i + 1], layers[i]]))
-            self.biases.append(np.zeros([layers[i + 1], 1]))
+            # each item in W is a matrix with dimensions len(layer+1) * (len(layer)+1)
+            self.weights.append(np.zeros([layers[i + 1], layers[i] + 1]))
 
             # the activations of each layer
             self.activations.append(np.zeros(layers[i]))
@@ -48,8 +48,11 @@ class Network:
         """vectorized implementation of forward propagation"""
         # for each layer
         for i in range(self.num_layers - 1):
-           # multiply the weights by the input
-            self.weighted_inputs[i + 1] = np.matmul(self.activations[i], np.transpose(self.weights[i])) + np.transpose(self.biases[i])
+            # pad the activations with a 1 at the start
+            A = pad_bias(self.activations[i])
+
+            # multiply the weights by the input
+            self.weighted_inputs[i + 1] = np.matmul(A, np.transpose(self.weights[i]))
 
             # apply the sigmoid
             self.activations[i + 1] = sigmoid(self.weighted_inputs[i + 1])
@@ -87,15 +90,18 @@ class Network:
             # find the error in layer l in terms of the error in layer l+1
             # have to replace the weight matrix with a version with the bias column deleted
             # next iteration of this - separate the bias and the weights
-            self.error[l] = np.matmul(self.error[l + 1], self.weights[l]) * sigmoid_prime(self.weighted_inputs[l])
+            self.error[l] = np.matmul(self.error[l + 1], unpad_bias(self.weights[l])) * sigmoid_prime(self.weighted_inputs[l])
         
         # loop back through the layers again, updating the weights
         for l in range(L, 0, -1):
+            # pad the activations for the layer with ones again
+            A = pad_bias(self.activations[l - 1])
+
+            # calculate the change in the weights for this layer
+            dW = np.matmul(np.transpose(self.error[l]), A)
+
             # update with gradient descent
-            self.weights[l - 1] -= (alpha / m) * np.matmul(np.transpose(self.error[l]), self.activations[l - 1])
-            
-            # update biases with gradient descent
-            self.biases[l - 1] -= (alpha / m) * np.matmul(np.transpose(self.error[l]), np.ones([m, 1]))
+            self.weights[l - 1] -= (alpha / m) * dW
 
 # UTILITY FUNCTIONS
 
@@ -120,31 +126,31 @@ def unpad_bias(data):
 
 # NETWORK OPERATION FUNCTIONS
 
-def setup_xor_network():
+def simple_test():
     # If this was run as a main script
     # Test the network running xnor
     n = Network([2, 2, 2])
-    n.weights[0] = np.array([[20., 20.], [-20., -20.]])
-    n.biases[0] = np.array([[-30.], [10.]])
-
-    n.weights[1] = np.array([[20., 20.], [-20., -20.]])
-    n.biases[1] = np.array([[-10.], [10.]])
+    n.weights[0] = np.array([[-30., 20., 20.], [10., -20., -20.]])
+    n.weights[1] = np.array([[-10., 20., 20.], [10., -20., -20.]])
 
     # The input and output
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
     Y = np.array([[1, 0], [0, 1], [0, 1], [1, 0]])
-    return n, X, Y
+
+    n.input(X)
+
+    cost = n.cost(X, Y)
+    n.backprop(Y, 0.1)
+    print("cost ",cost)
 
 def setup_test_network():
     n = Network([2, 2, 2])
-    W0 = (np.random.rand(2, 2) * 50) - 25
-    W1 = (np.random.rand(2, 2) * 50) - 25
-    B0 = (np.random.rand(2, 1) * 50) - 25
-    B1 = (np.random.rand(2, 1) * 50) - 25
+    W0 = (np.random.rand(2, 3) * 50) - 25
+    W1 = (np.random.rand(2, 3) * 50) - 25
     n.weights[0] = W0
     n.weights[1] = W1
 
-    return n, W0, W1, B0, B1
+    return n, W0, W1
 
 def iterate_network(n, X, Y, alpha = 0.1, iterations = 1000):
     J = []
@@ -169,7 +175,7 @@ def plot_cost(J):
 
 def time_network():
     # The input and output
-    n, W0, W1, B0, B1 = setup_test_network()
+    n, W0, W1 = setup_test_network()
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
     Y = np.array([[1, 0], [0, 1], [0, 1], [1, 0]])
 
@@ -177,7 +183,7 @@ def time_network():
 
 if __name__ == '__main__':
     # The input and output
-    n, W0, W1, B0, B1 = setup_test_network()
+    n, W0, W1 = setup_test_network()
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
     Y = np.array([[1, 0], [0, 1], [0, 1], [1, 0]])
 
